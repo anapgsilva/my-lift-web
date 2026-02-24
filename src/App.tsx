@@ -236,12 +236,6 @@ function App() {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('userId');
-    localStorage.removeItem('userPassword');
-    setUser({ ...user, isLoggedIn: false });
-  };
-
   const handleLogin = (id: string, password: string) => {
     localStorage.setItem('userId', id);
     localStorage.setItem('userPassword', password);
@@ -254,7 +248,7 @@ function App() {
 
   return (
     <div className="app">
-      <Header user={user} onLogout={handleLogout} isListening={status === 'listening'} />
+      <Header user={user} isListening={status === 'listening'} />
       
       {status === 'unsupported' ? (
         <>
