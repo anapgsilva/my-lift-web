@@ -6,6 +6,8 @@ import { getRequestId, parseNumbers } from './utils/numbers'
 import { getAccessTokenForSocket } from './utils/koneApiService'
 import { GROUP_ID, TARGET_BUILDING_ID, WEBSOCKET_ENDPOINT, WEBSOCKET_SUBPROTOCOL } from './utils/constants'
 import { AccessToken, DestinationCallPayload } from './types/koneApi'
+import Header from './components/Header/Header'
+import Login from './components/Login/Login'
 
 
 /** Speak a sentence using the Web Speech Synthesis API */
@@ -13,6 +15,14 @@ function speak(text: string): Promise<void> {
   return new Promise((resolve) => {
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.rate = 1
+    
+    const savedVoice = localStorage.getItem('selectedVoice')
+    if (savedVoice) {
+      const voices = window.speechSynthesis.getVoices()
+      const voice = voices.find(v => v.name === savedVoice)
+      if (voice) utterance.voice = voice
+    }
+    
     utterance.onend = () => resolve()
     utterance.onerror = () => resolve()
     window.speechSynthesis.speak(utterance)
@@ -30,9 +40,18 @@ function App() {
   const [numbers, setNumbers] = useState<number[]>([])
   const [spokenText, setSpokenText] = useState('')
   const [errorMsg, setErrorMsg] = useState('')
+  const [user, setUser] = useState({ isLoggedIn: false })
   const recognitionRef = useRef<SpeechRecognition | null>(null)
   const hasAutoStarted = useRef(false)
   const wsRef = useRef<WebSocket | null>(null);
+
+  useEffect(() => {
+    const userId = localStorage.getItem('userId');
+    const userPassword = localStorage.getItem('userPassword');
+    if (userId && userPassword) {
+      setUser({ isLoggedIn: true });
+    }
+  }, []);
 
 
   const openWebSocketConnection = useCallback((accessToken: AccessToken): Promise<WebSocket> => {
@@ -146,13 +165,19 @@ function App() {
     recognition.start()
   }, [])
 
-  // Auto-start listening on mount
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop()
+    }
+  }
+
+  // Auto-start listening on mount if user is logged in
   useEffect(() => {
-    if (hasAutoStarted.current) return
+    if (hasAutoStarted.current || !user.isLoggedIn) return
     hasAutoStarted.current = true
     const timer = setTimeout(() => startListening(), 500)
     return () => clearTimeout(timer)
-  }, [startListening])
+  }, [startListening, user.isLoggedIn])
 
   // Open websocket on mount
   useEffect(() => {
@@ -203,69 +228,84 @@ function App() {
     }
   };
 
-  if (status === 'unsupported') {
-    return (
-      <div className="app">
-        <h1>My Lift</h1>
-        <p className="error" role="alert">
-          Sorry, your browser does not support the Web Speech Recognition API.
-          Please try Chrome or Safari.
-        </p>
-      </div>
-    )
+  const handleLogout = () => {
+    localStorage.removeItem('userId');
+    localStorage.removeItem('userPassword');
+    setUser({ ...user, isLoggedIn: false });
+  };
+
+  const handleLogin = (id: string, password: string) => {
+    localStorage.setItem('userId', id);
+    localStorage.setItem('userPassword', password);
+    setUser({ isLoggedIn: true });
+  };
+
+  if (!user.isLoggedIn) {
+    return <Login onLogin={handleLogin} />;
   }
 
   return (
     <div className="app">
-      <h1>My Lift</h1>
-      <p className="instructions">
-        Say for example "FROM GROUND TO LEVEL 25"
-      </p>
+      <Header user={user} onLogout={handleLogout} isListening={status === 'listening'} />
+      
+      {status === 'unsupported' ? (
+        <>
+          <p className="error" role="alert">
+            Sorry, your browser does not support the Web Speech Recognition API.
+            Please try Chrome or Safari.
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="instructions">
+            Say for example "FROM GROUND TO LEVEL 25"
+          </p>
 
-      <button
-        className="start-btn"
-        onClick={startListening}
-        disabled={status === 'listening'}
-        aria-label="Start listening for speech"
-      >
-        {status === 'listening' ? '🎤 Listening…' : '🎤 Start Listening'}
-      </button>
+          <button
+            className="start-btn"
+            onClick={status === 'listening' ? stopListening : startListening}
+            aria-label={status === 'listening' ? 'Stop listening' : 'Start listening for speech'}
+          >
+            {status === 'listening' ? '🛑 Stop Listening' : '🎤 Start Listening'}
+          </button>
 
-      {status === 'listening' && (
-        <p className="status" aria-live="polite">Listening… speak now.</p>
-      )}
+          {status === 'listening' && (
+            <p className="status" aria-live="polite">Listening… speak now.</p>
+          )}
 
-      {status === 'processing' && (
-        <p className="status" aria-live="polite">Processing…</p>
-      )}
+          {status === 'processing' && (
+            <p className="status" aria-live="polite">Processing…</p>
+          )}
 
-      {transcript && (
-        <div className="result-section">
-          <h2>You said:</h2>
-          <p className="transcript">"{transcript}"</p>
-        </div>
-      )}
+          {transcript && (
+            <div className="result-section">
+              <h2>You said:</h2>
+              <p className="transcript">"{transcript}"</p>
+            </div>
+          )}
 
-      {numbers.length > 0 && (
-        <div className="result-section">
-          <h2>Detected numbers:</h2>
-          <div className="numbers" aria-live="polite">
-            {numbers.map((n, i) => (
-              <span key={i} className="number-badge">{n}</span>
-            ))}
-          </div>
-        </div>
-      )}
+          {numbers.length > 0 && (
+            <div className="result-section">
+              <h2>Detected numbers:</h2>
+              <div className="numbers" aria-live="polite">
+                {numbers.map((n, i) => (
+                  <span key={i} className="number-badge">{n}</span>
+                ))}
+              </div>
+            </div>
+          )}
 
-      {spokenText && (
-        <div className="result-section">
-          <h2>Response:</h2>
-          <p className="spoken-text" aria-live="polite">{spokenText}</p>
-        </div>
-      )}
+          {spokenText && (
+            <div className="result-section">
+              <h2>Response:</h2>
+              <p className="spoken-text" aria-live="polite">{spokenText}</p>
+            </div>
+          )}
 
-      {status === 'error' && (
-        <p className="error" role="alert">{errorMsg}</p>
+          {status === 'error' && (
+            <p className="error" role="alert">{errorMsg}</p>
+          )}
+        </>
       )}
     </div>
   )
