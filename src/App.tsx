@@ -115,6 +115,7 @@ function App() {
 
     // Cancel any ongoing speech
     window.speechSynthesis.cancel()
+    speak('');
 
     const recognition = new SR()
     recognitionRef.current = recognition
@@ -183,9 +184,8 @@ function App() {
   useEffect(() => {
     if (hasAutoStarted.current || !user.isLoggedIn) return
     hasAutoStarted.current = true
-    const speakTimer = setTimeout(() => speak(''), 300)
-    const listeningTimer = setTimeout(() => startListening(), 600)
-    return () => {clearTimeout(speakTimer); clearTimeout(listeningTimer)}
+    const listeningTimer = setTimeout(() => startListening(), 500)
+    return () => {clearTimeout(listeningTimer)}
   }, [startListening, user.isLoggedIn])
 
   // Open websocket on mount
