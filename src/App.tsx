@@ -109,15 +109,15 @@ function App() {
 
       let sentence: string
       if (nums.length === 0) {
-        sentence = "I didn't detect any numbers in that sentence. Please try again."
+        sentence = "Please try again. I didn't detect any numbers in that sentence."
       } else if (nums.length === 1) {
-        sentence = `I only recognised one floor - floor ${NUM_TO_WORD[nums[0]]}. Please try again.`
+        sentence = `Please try again. I only recognised one floor - floor ${NUM_TO_WORD[nums[0]]}.`
       } else {
         try {
           sendMessage(nums.slice(0, 2))
-          sentence = `Elevator has been called to take you from level ${NUM_TO_WORD[nums[0]]} to level ${NUM_TO_WORD[nums[1]]}.`
+          sentence = `SUCCESS. Elevator has been called to take you from level ${NUM_TO_WORD[nums[0]]} to level ${NUM_TO_WORD[nums[1]]}.`
         } catch {
-          sentence = `Sorry, there was an error calling the elevator.`
+          sentence = `Please try again. Sorry, there was an error calling the elevator.`
         }
       }
 
@@ -202,7 +202,7 @@ function App() {
   if (status === 'unsupported') {
     return (
       <div className="app">
-        <h1>Speech Number Demo</h1>
+        <h1>My Lift</h1>
         <p className="error" role="alert">
           Sorry, your browser does not support the Web Speech Recognition API.
           Please try Chrome or Safari.
@@ -213,7 +213,7 @@ function App() {
 
   return (
     <div className="app">
-      <h1>Call My Lift</h1>
+      <h1>My Lift</h1>
       <p className="instructions">
         Say for example "FROM GROUND TO LEVEL 25"
       </p>
