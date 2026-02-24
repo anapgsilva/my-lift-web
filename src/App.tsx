@@ -183,9 +183,9 @@ function App() {
   useEffect(() => {
     if (hasAutoStarted.current || !user.isLoggedIn) return
     hasAutoStarted.current = true
-    speak('')
-    const timer = setTimeout(() => startListening(), 500)
-    return () => clearTimeout(timer)
+    const speakTimer = setTimeout(() => speak(''), 300)
+    const listeningTimer = setTimeout(() => startListening(), 600)
+    return () => {clearTimeout(speakTimer); clearTimeout(listeningTimer)}
   }, [startListening, user.isLoggedIn])
 
   // Open websocket on mount
