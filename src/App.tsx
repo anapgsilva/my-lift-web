@@ -183,6 +183,7 @@ function App() {
   useEffect(() => {
     if (hasAutoStarted.current || !user.isLoggedIn) return
     hasAutoStarted.current = true
+    speak('')
     const timer = setTimeout(() => startListening(), 500)
     return () => clearTimeout(timer)
   }, [startListening, user.isLoggedIn])
