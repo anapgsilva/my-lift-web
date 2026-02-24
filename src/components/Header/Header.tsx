@@ -13,11 +13,10 @@ interface User {
 
 interface HeaderProps {
   user?: User;
-  onLogout?: () => void;
   isListening?: boolean;
 }
 
-const Header: React.FC<HeaderProps> = ({ user, onLogout, isListening }) => {
+const Header: React.FC<HeaderProps> = ({ user, isListening }) => {
   const [showMenu, setShowMenu] = useState(false);
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<string>('');
@@ -52,11 +51,6 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, isListening }) => {
     };
   }, [showMenu]);
 
-  const handleLogout = () => {
-    setShowMenu(false);
-    onLogout?.();
-  };
-
   const handleVoiceChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const voiceName = e.target.value;
     setSelectedVoice(voiceName);
@@ -84,12 +78,11 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, isListening }) => {
                     <option value="">Default</option>
                     {voices.map((voice) => (
                       <option key={voice.name} value={voice.name}>
-                        {voice.name}
+                        {voice.name} ({voice.lang})
                       </option>
                     ))}
                   </select>
                 </div>
-                <button className="logout-btn" onClick={handleLogout}>Log out</button>
               </div>
             )}
           </div>

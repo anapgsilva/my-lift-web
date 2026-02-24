@@ -1,7 +1,7 @@
 import axios, { type AxiosError, AxiosRequestConfig } from 'axios'
 import _ from 'lodash'
 import { AccessToken } from '../types/koneApi'
-import { API_AUTH_TOKEN_ENDPOINT_V2, BUILDING_ID, CLIENT_ID, CLIENT_SECRET, GROUP_ID } from './constants'
+import { API_AUTH_TOKEN_ENDPOINT_V2, BUILDING_ID, getClientId, getClientSecret, GROUP_ID } from './constants'
 
 export const validateClientIdAndClientSecret = (CLIENT_ID: string, CLIENT_SECRET: string) => {
   if (
@@ -60,6 +60,8 @@ export async function fetchAccessToken(
 
 export async function getAccessTokenForSocket(): Promise<AccessToken> {
   // Establish connection to external API at startup
+  const CLIENT_ID = getClientId()
+  const CLIENT_SECRET = getClientSecret()
   validateClientIdAndClientSecret(CLIENT_ID, CLIENT_SECRET)
   let accessToken = await fetchAccessToken(CLIENT_ID, CLIENT_SECRET, [
     'application/inventory',

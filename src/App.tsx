@@ -46,6 +46,14 @@ function App() {
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('logout') === 'true') {
+      localStorage.removeItem('userId');
+      localStorage.removeItem('userPassword');
+      window.history.replaceState({}, '', window.location.pathname);
+      return;
+    }
+
     const userId = localStorage.getItem('userId');
     const userPassword = localStorage.getItem('userPassword');
     if (userId && userPassword) {
