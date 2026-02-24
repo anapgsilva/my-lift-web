@@ -10,7 +10,7 @@ export const validateClientIdAndClientSecret = (CLIENT_ID: string, CLIENT_SECRET
     CLIENT_ID === 'YOUR_CLIENT_ID' ||
     CLIENT_SECRET === 'YOUR_CLIENT_SECRET'
   )
-    throw Error('CLIENT_ID and CLIENT_SECRET needs to be defined')
+    throw Error('CLIENT_ID and CLIENT_SECRET need to be defined')
 }
 
 export async function fetchAccessToken(

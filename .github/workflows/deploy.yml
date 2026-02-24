@@ -21,6 +21,9 @@ permissions:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build:
+    environment:
+      name: github-pages
+      
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -32,10 +35,10 @@ jobs:
         run: npm run build
         env:
           VITE_API_HOSTNAME: ${{ secrets.VITE_API_HOSTNAME }}
-          VITE_CLIENT_ID: ${{secrets.VITE_CLIENT_ID}}
-          VITE_CLIENT_SECRET: ${{secrets.VITE_CLIENT_SECRET}}
-          VITE_BUILDING_ID: ${{secrets.VITE_BUILDING_ID}}
-          VITE_GROUP_ID: ${{secrets.VITE_GROUP_ID}}
+          VITE_CLIENT_ID: ${{ secrets.VITE_CLIENT_ID }}
+          VITE_CLIENT_SECRET: ${{ secrets.VITE_CLIENT_SECRET }}
+          VITE_BUILDING_ID: ${{ secrets.VITE_BUILDING_ID }}
+          VITE_GROUP_ID: ${{ secrets.VITE_GROUP_ID }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
