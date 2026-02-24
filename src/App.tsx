@@ -54,14 +54,16 @@ function App() {
             ws.onmessage = (event: MessageEvent) => {
               const response = JSON.parse(event.data)
               console.log('Message received from server:', response)
+              let message = ""
               if (response.data.success == true) {
-                speak('Success. Calling your lift now.')
-              } else 
-              if (response.data.error) {
+                message = 'Success. Calling your lift now.'
+                setSpokenText(message)
+              } else if (response.data.error) {
+                message = `Lift server responded with error ${response.data.error}`
                 setStatus('error')
-                setErrorMsg(`Lift server responded with error ${response.data.error}`)
-                speak(`Lift server responded with error ${response.data.error}`)
+                setErrorMsg(message)
               }
+              speak(message)
             }
             ws.onopen = () => {
                 console.log('Web socket connection opened at ', new Date())
