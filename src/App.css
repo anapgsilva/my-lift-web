@@ -1,0 +1,93 @@
+.app {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+h1 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+h2 {
+  font-size: 1.2rem;
+  margin-bottom: 0.5rem;
+  color: #888;
+}
+
+.instructions {
+  color: #999;
+  margin-bottom: 1.5rem;
+}
+
+.start-btn {
+  font-size: 1.2rem;
+  padding: 0.8em 1.6em;
+  border-radius: 12px;
+  border: 2px solid #646cff;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.start-btn:hover:not(:disabled) {
+  background: #646cff22;
+}
+
+.start-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.start-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+  border-color: #aaa;
+}
+
+.status {
+  margin-top: 1rem;
+  font-style: italic;
+  color: #aaa;
+}
+
+.result-section {
+  margin-top: 1.5rem;
+}
+
+.transcript {
+  font-size: 1.1rem;
+  font-style: italic;
+}
+
+.numbers {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 0.5rem;
+}
+
+.number-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #646cff;
+  color: #fff;
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.spoken-text {
+  font-size: 1.1rem;
+  color: #8b8;
+}
+
+.error {
+  color: #e55;
+  margin-top: 1rem;
+}
