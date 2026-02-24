@@ -1,4 +1,20 @@
-# React + Vite
+# My Lift webapp
+
+User voices from and to which floor they want to travel.
+Request is sent to Kone api to move the lift.
+Feedback response is received.
+
+
+## Run in docker
+
+```sh
+docker build -t app .     
+docker run -p 443:443 app
+```
+
+Open in [https://localhost](https://localhost)
+
+## React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
