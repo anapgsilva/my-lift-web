@@ -27,9 +27,6 @@ jobs:
       - name: Build
         run: npm run build
 
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
