@@ -30,6 +30,12 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          VITE_API_HOSTNAME: ${{ secrets.VITE_API_HOSTNAME }}
+          VITE_CLIENT_ID: ${{secrets.VITE_CLIENT_ID}}
+          VITE_CLIENT_SECRET: ${{secrets.VITE_CLIENT_SECRET}}
+          VITE_BUILDING_ID: ${{secrets.VITE_BUILDING_ID}}
+          VITE_GROUP_ID: ${{secrets.VITE_GROUP_ID}}
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

@@ -54,6 +54,9 @@ function App() {
             ws.onmessage = (event: MessageEvent) => {
               const response = JSON.parse(event.data)
               console.log('Message received from server:', response)
+              if (response.data.success == true) {
+                speak('Success. Calling your lift now.')
+              } else 
               if (response.data.error) {
                 setStatus('error')
                 setErrorMsg(`Lift server responded with error ${response.data.error}`)
@@ -107,7 +110,7 @@ function App() {
       const nums = parseNumbers(text)
       setNumbers(nums)
 
-      let sentence: string
+      let sentence: string = ''
       if (nums.length === 0) {
         sentence = "Please try again. I didn't detect any numbers in that sentence."
       } else if (nums.length === 1) {
@@ -115,7 +118,6 @@ function App() {
       } else {
         try {
           sendMessage(nums.slice(0, 2))
-          sentence = `SUCCESS. Elevator has been called to take you from level ${NUM_TO_WORD[nums[0]]} to level ${NUM_TO_WORD[nums[1]]}.`
         } catch {
           sentence = `Please try again. Sorry, there was an error calling the elevator.`
         }
@@ -168,7 +170,7 @@ function App() {
     };
   }, [])
 
-   const sendMessage = (floors: number[]) => {
+  const sendMessage = (floors: number[]) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       try {
         const payload: DestinationCallPayload = {
