@@ -32,7 +32,12 @@ const Header: React.FC<HeaderProps> = ({ user, isListening }) => {
     window.speechSynthesis.onvoiceschanged = loadVoices;
 
     const saved = localStorage.getItem('selectedVoice');
-    if (saved) setSelectedVoice(saved);
+    if (saved) {
+      setSelectedVoice(saved);
+    } else {
+      setSelectedVoice(voices[0]?.name || '');
+      localStorage.setItem('selectedVoice', voices[0]?.name || '');
+    }
   }, []);
 
   useEffect(() => {
@@ -75,7 +80,6 @@ const Header: React.FC<HeaderProps> = ({ user, isListening }) => {
                 <div className="voice-selector">
                   <label>Voice:</label>
                   <select value={selectedVoice} onChange={handleVoiceChange}>
-                    <option value="">Default</option>
                     {voices.map((voice) => (
                       <option key={voice.name} value={voice.name}>
                         {voice.name} ({voice.lang})
