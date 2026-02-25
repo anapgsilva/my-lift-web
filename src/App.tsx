@@ -61,6 +61,24 @@ function App() {
     }
   }, []);
 
+  useEffect(() => {
+      // Open websocket on mount if user logged in
+        const initWebSocket = async () => {
+          // Open the WebSocket connection
+          const accessToken = await getAccessTokenForSocket()
+          const ws = await openWebSocketConnection(accessToken);
+          wsRef.current = ws
+        }
+        initWebSocket();
+
+        // Clean up the WebSocket connection when the component unmounts
+        return () => {
+          if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+            wsRef.current.close();
+          }
+        };
+    }, [])
+
 
   const openWebSocketConnection = useCallback((accessToken: AccessToken): Promise<WebSocket> => {
     return new Promise((resolve, reject) => {
@@ -188,24 +206,6 @@ function App() {
     return () => {clearTimeout(listeningTimer)}
   }, [startListening, user.isLoggedIn])
 
-  // Open websocket on mount
-  useEffect(() => {
-    const initWebSocket = async () => {
-      // Open the WebSocket connection
-      const accessToken = await getAccessTokenForSocket()
-      const ws = await openWebSocketConnection(accessToken);
-      wsRef.current = ws
-    }
-    initWebSocket();
-
-    // Clean up the WebSocket connection when the component unmounts
-    return () => {
-      if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-        wsRef.current.close();
-      }
-    };
-  }, [])
-
   const sendMessage = (floors: number[]) => {
     if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
       try {
@@ -255,7 +255,7 @@ function App() {
         <>
           <p className="error" role="alert">
             Sorry, your browser does not support the Web Speech Recognition API.
-            Please try Chrome or Safari.
+            Please check that your browser has microphone permissions.
           </p>
         </>
       ) : (
