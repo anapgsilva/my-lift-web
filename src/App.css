@@ -19,6 +19,7 @@ h2 {
 
 .instructions {
   color: #999;
+  margin-top: -1rem;
   margin-bottom: 1.5rem;
 }
 
@@ -26,7 +27,7 @@ h2 {
   font-size: 1.2rem;
   padding: 0.8em 1.6em;
   border-radius: 12px;
-  border: 2px solid #646cff;
+  border: 2px solid #007bff;
   background: transparent;
   color: inherit;
   cursor: pointer;
@@ -76,7 +77,7 @@ h2 {
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  background: #646cff;
+  background: #007bff;
   color: #fff;
   font-size: 1.8rem;
   font-weight: 700;

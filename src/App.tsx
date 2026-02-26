@@ -133,7 +133,6 @@ function App() {
 
     // Cancel any ongoing speech
     window.speechSynthesis.cancel()
-    speak('');
 
     const recognition = new SR()
     recognitionRef.current = recognition
@@ -260,11 +259,13 @@ function App() {
         </>
       ) : (
         <>
+          <h3>Say your starting and destination floors</h3>
           <p className="instructions">
-            Say for example "FROM GROUND TO LEVEL 25"
+            For example <i>"FROM GROUND TO LEVEL 25"</i>
           </p>
 
           <button
+            id="listening-btn"
             className="start-btn"
             onClick={status === 'listening' ? stopListening : startListening}
             aria-label={status === 'listening' ? 'Stop listening' : 'Start listening for speech'}
