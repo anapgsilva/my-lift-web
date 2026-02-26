@@ -90,21 +90,23 @@ function App() {
             
             // error and close events are absorbed until connection has been established
             ws.onerror = (error) => {
-                reject(new Error(`WebSocket error: ${error}`))
+              setErrorMsg('Failed to connect to the lift server. Please refresh page.')
+              reject(new Error(`WebSocket error: ${error}`))
             }
             ws.onclose = (event) => {
-                console.error(`WebSocket closed: ${event.code} ${event.reason}`)
-                reject(event.code)
+              setErrorMsg('Connection to the lift server closed. Please refresh page.')
+              console.error(`WebSocket closed: ${event.code} ${event.reason}`)
+              reject(event.code)
             }
             ws.onmessage = (event: MessageEvent) => {
               const response = JSON.parse(event.data)
               console.log('Message received from server:', response)
               let message = ""
               if (response.data.success == true) {
-                message = 'Success. Calling your lift now.'
+                message = 'Calling your lift now.'
                 setSpokenText(message)
               } else if (response.data.error) {
-                message = `Lift server responded with error ${response.data.error}`
+                message = `Sorry, something went wrong. Lift server responded with ${response.data.error}. Please try again or refresh page.`
                 setStatus('error')
                 setErrorMsg(message)
               }
@@ -118,6 +120,7 @@ function App() {
             }    
           } catch (error) {
             console.error('Error while opening WebSocket connection', error)
+            setErrorMsg('Failed to connect to the lift server. Please refresh page.')
             reject(error)
         }
     })
@@ -159,14 +162,14 @@ function App() {
 
       let sentence: string = ''
       if (nums.length === 0) {
-        sentence = "Please try again. I didn't detect any numbers in that sentence."
+        sentence = "Please try again. No numbers were detected."
       } else if (nums.length === 1) {
-        sentence = `Please try again. I only recognised one floor - floor ${NUM_TO_WORD[nums[0]]}.`
+        sentence = `Please try again. Only one floor detected - floor ${NUM_TO_WORD[nums[0]]}.`
       } else {
         try {
           sendMessage(nums.slice(0, 2))
         } catch {
-          sentence = `Please try again. Sorry, there was an error calling the elevator.`
+          sentence = `Please try again with valid floors. Could not call the elevator.`
         }
       }
 
@@ -259,10 +262,12 @@ function App() {
         </>
       ) : (
         <>
-          <h3>Say your starting and destination floors</h3>
-          <p className="instructions">
-            For example <i>"FROM GROUND TO LEVEL 25"</i>
-          </p>
+          <div>
+            <h3>Say your starting and destination floors</h3>
+            <p className="instructions">
+              For example <i>"FROM GROUND TO LEVEL 25"</i>
+            </p>
+          </div>
 
           <button
             id="listening-btn"
