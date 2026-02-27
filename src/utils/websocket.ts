@@ -25,12 +25,11 @@ export function openWebSocketConnection(
       }
       ws.onmessage = (event: MessageEvent) => {
         const response = JSON.parse(event.data)
-        console.log('Message received from server:', response)
+        console.info('Message received from server:', response)
         onMessage(response)
       }
       ws.onopen = () => {
-        console.log('Web socket connection opened at ', new Date())
-        console.log(ws.url.split('?')[0])
+        console.info('Web socket connection opened at ', new Date())
         // Once the connection is open, resolve promise with the WebSocket instance
         resolve(ws)
       }    

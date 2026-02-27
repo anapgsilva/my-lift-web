@@ -33,7 +33,6 @@ export function useSpeechRecognition(
     recognition.continuous = false
 
     recognition.onstart = () => {
-      console.log('Speech recognition started')
       setStatus('listening')
       setTranscript('')
       setNumbers([])
@@ -70,7 +69,6 @@ export function useSpeechRecognition(
     }
 
     recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      console.log('Speech recognition error:', event.error)
       if (event.error === 'no-speech' || event.error === 'aborted') {
         setStatus('idle')
         return
@@ -79,11 +77,9 @@ export function useSpeechRecognition(
     }
 
     recognition.onend = () => {
-      console.log('Speech recognition ended')
       setStatus((prev) => (prev === 'listening' ? 'idle' : prev))
     }
 
-    console.log('Starting speech recognition')
     recognition.start()
   }, [setStatus, setTranscript, setNumbers, setSpokenText, showError, sendMessage])
 

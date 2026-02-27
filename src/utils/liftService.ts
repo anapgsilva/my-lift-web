@@ -69,7 +69,7 @@ export async function getAccessTokenForSocket(): Promise<AccessToken> {
     'application/inventory',
     `callgiving/group:${BUILDING_ID}:${GROUP_ID}`,
   ])
-  console.log('AccessToken successfully fetched')
+  console.info('AccessToken successfully fetched')
   return accessToken
 }
 
