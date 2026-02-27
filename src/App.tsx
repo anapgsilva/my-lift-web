@@ -136,6 +136,7 @@ function App() {
 
     // Cancel any ongoing speech
     window.speechSynthesis.cancel()
+    speak('') // needed for speechSynthesis to work on mobile
 
     const recognition = new SR()
     recognitionRef.current = recognition
@@ -234,7 +235,7 @@ function App() {
       } 
     } else {
       console.warn("WebSocket not connected.");
-      setErrorMsg("WebSocket is not connected.")
+      setErrorMsg("Failed to call the lift because the connection to the lift server was interrupted. Please refresh page.")
       setStatus('error')
     }
   };
