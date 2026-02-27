@@ -103,9 +103,7 @@ describe('App', () => {
       vi.mocked(auth.isUserLoggedIn).mockReturnValue(true)
       const { useSpeechRecognition } = await import('../hooks/useSpeechRecognition')
       const mockStartListening = vi.fn()
-      let capturedSetStatus: any
       vi.mocked(useSpeechRecognition).mockImplementation((setStatus: any) => {
-        capturedSetStatus = setStatus
         return {
           startListening: () => {
             mockStartListening()
