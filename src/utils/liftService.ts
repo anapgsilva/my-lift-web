@@ -1,7 +1,9 @@
 import axios, { type AxiosError, AxiosRequestConfig } from 'axios'
 import _ from 'lodash'
-import { AccessToken } from '../types/koneApi'
-import { API_AUTH_TOKEN_ENDPOINT_V2, BUILDING_ID, getClientId, getClientSecret, GROUP_ID } from './constants'
+import { AccessToken, DestinationCallPayload } from '../types/koneApi'
+import { API_AUTH_TOKEN_ENDPOINT_V2, BUILDING_ID, getClientId, getClientSecret, GROUP_ID, TARGET_BUILDING_ID } from './constants'
+import { koneApiMapping } from './mapping'
+import { getRequestId } from './numbers'
 
 export const validateClientIdAndClientSecret = (CLIENT_ID: string, CLIENT_SECRET: string) => {
   if (
@@ -69,4 +71,37 @@ export async function getAccessTokenForSocket(): Promise<AccessToken> {
   ])
   console.log('AccessToken successfully fetched')
   return accessToken
+}
+
+export function sendLiftCall(
+  ws: WebSocket | null,
+  floors: number[],
+  onError: (msg: string) => void
+): void {
+  if (ws && ws.readyState === WebSocket.OPEN) {
+    try {
+      const payload: DestinationCallPayload = {
+        type: 'lift-call-api-v2',
+        buildingId: TARGET_BUILDING_ID,
+        callType: 'action',
+        groupId: GROUP_ID,
+        payload: {
+          request_id: getRequestId(),
+          area: koneApiMapping[String(floors[0])],
+          time: new Date().toISOString(),
+          terminal: 1,
+          call: {
+            action: 2,
+            destination: koneApiMapping[String(floors[1])],
+          },
+        }
+      }
+      ws.send(JSON.stringify(payload))
+    } catch (error) {
+      throw new Error(error instanceof Error ? error.message : String(error))
+    }
+  } else {
+    console.warn("WebSocket not connected.")
+    onError("Failed to call the lift because the connection to the lift server was interrupted. Please refresh page.")
+  }
 }

@@ -7,14 +7,14 @@ export function parseNumbers(text: string): number[] {
   const found: FoundNumber[] = []
 
   // Match written-out number words
-  const wordPattern = /\b(P1|basement|minus one|ground|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|twenty-one|twenty-two|twenty-three|twenty-four|twenty-five|twenty-six|twenty-seven|twenty-eight|twenty-nine|thirty)\b/g
+  const wordPattern = /\b(basement|ground|zero|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fourteen|fifteen|sixteen|seventeen|eighteen|nineteen|twenty|twenty-one|twenty-two|twenty-three|twenty-four|twenty-five|twenty-six|twenty-seven|twenty-eight|twenty-nine|thirty)\b/g
   let match: RegExpExecArray | null
   while ((match = wordPattern.exec(lower)) !== null) {
     found.push({ index: match.index, value: WORD_TO_NUM[match[1]] })
   }
 
   // Match digit numbers -1 to 30
-  const digitPattern = /\b(P1|-1|[0-9]|[12][0-9]|30)\b/g
+  const digitPattern = /\b(-1|[0-9]|[12][0-9]|30)\b/g
   while ((match = digitPattern.exec(lower)) !== null) {
     const num = parseInt(match[1], 10)
     if (num >= -1 && num <= 30) {
