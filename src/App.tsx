@@ -73,7 +73,7 @@ function App() {
               message = `Sorry, something went wrong. Lift server responded with ${response.data.error}. Please try again or refresh page.`
               showError(message)
             }
-            speak(message)
+            speak(message).catch(() => {})
           },
           (error) => showError(error)
         )

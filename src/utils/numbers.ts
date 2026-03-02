@@ -27,6 +27,6 @@ export function parseNumbers(text: string): number[] {
   return found.slice(0, 2).map((f) => f.value)
 }
 
-export function getRequestId() {
-  return Math.floor(Math.random() * 1000000000)
+export function getRequestId(): number {
+  return crypto.getRandomValues(new Uint32Array(1))[0]
 }

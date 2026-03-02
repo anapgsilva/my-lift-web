@@ -1,4 +1,4 @@
-import { useCallback, useRef } from 'react'
+import { useCallback, useEffect, useRef } from 'react'
 import { getSpeechRecognition, speak } from '../utils/speech'
 import { parseNumbers } from '../utils/numbers'
 import { NUM_TO_WORD } from '../utils/mapping'
@@ -14,6 +14,20 @@ export function useSpeechRecognition(
 ) {
   const recognitionRef = useRef<SpeechRecognition | null>(null)
 
+  useEffect(() => {
+    return () => {
+      const recognition = recognitionRef.current
+      if (recognition) {
+        recognition.onstart = null
+        recognition.onresult = null
+        recognition.onerror = null
+        recognition.onend = null
+        recognition.abort()
+        recognitionRef.current = null
+      }
+    }
+  }, [])
+
   const startListening = useCallback(() => {
     const SR = getSpeechRecognition()
     if (!SR) {
@@ -21,9 +35,14 @@ export function useSpeechRecognition(
       return
     }
 
+    if (recognitionRef.current) {
+      recognitionRef.current.abort()
+      recognitionRef.current = null
+    }
+
     // Cancel any ongoing speech
     window.speechSynthesis.cancel()
-    speak('') // needed for speechSynthesis to work on mobile
+    speak('').catch(() => {}) // needed for speechSynthesis to work on mobile
 
     const recognition = new SR()
     recognitionRef.current = recognition
@@ -64,7 +83,7 @@ export function useSpeechRecognition(
 
       if (sentence.length > 0) {
         showError(sentence)
-        setTimeout(() => speak(sentence), 300)
+        setTimeout(() => speak(sentence).catch(() => {}), 300)
       }
     }
 

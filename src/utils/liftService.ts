@@ -19,7 +19,7 @@ export async function fetchAccessToken(
   clientId: string,
   clientSecret: string,
   scopes?: string[]
-): Promise<AccessToken> {
+): Promise<{ token: AccessToken; expiresIn: number }> {
 
   const requestConfig: AxiosRequestConfig = {
     method: 'POST',
@@ -40,9 +40,10 @@ export async function fetchAccessToken(
   try {
     const requestResult = await axios(requestConfig)
 
-    // get the accessToken from the response
-    const accessToken = requestResult.data.access_token
-    return accessToken
+    return {
+      token: requestResult.data.access_token,
+      expiresIn: requestResult.data.expires_in,
+    }
 
   } catch (authError: unknown){
     let errorMsg = 'Error fetching the access token'
@@ -60,17 +61,29 @@ export async function fetchAccessToken(
   }
 }
 
+let tokenCache: { value: AccessToken; expiresAt: number } | null = null
+
+export function _resetTokenCache(): void {
+  tokenCache = null
+}
+
 export async function getAccessTokenForSocket(): Promise<AccessToken> {
-  // Establish connection to external API at startup
   const CLIENT_ID = getClientId()
   const CLIENT_SECRET = getClientSecret()
   validateClientIdAndClientSecret(CLIENT_ID, CLIENT_SECRET)
-  let accessToken = await fetchAccessToken(CLIENT_ID, CLIENT_SECRET, [
+
+  // Return cached token if still valid with at least 60 s to spare
+  if (tokenCache && Date.now() < tokenCache.expiresAt - 60_000) {
+    return tokenCache.value
+  }
+
+  const { token, expiresIn } = await fetchAccessToken(CLIENT_ID, CLIENT_SECRET, [
     'application/inventory',
     `callgiving/group:${BUILDING_ID}:${GROUP_ID}`,
   ])
+  tokenCache = { value: token, expiresAt: Date.now() + expiresIn * 1000 }
   console.info('AccessToken successfully fetched')
-  return accessToken
+  return tokenCache.value
 }
 
 export function sendLiftCall(

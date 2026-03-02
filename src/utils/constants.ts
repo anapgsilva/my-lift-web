@@ -1,3 +1,6 @@
+if (!import.meta.env.VITE_API_HOSTNAME) {
+  console.warn('VITE_API_HOSTNAME is not set, defaulting to dev.kone.com')
+}
 export const API_HOSTNAME = import.meta.env.VITE_API_HOSTNAME || 'dev.kone.com'
 export const API_AUTH_TOKEN_ENDPOINT_V2 = `https://${API_HOSTNAME}/api/v2/oauth2/token`
 export const WEBSOCKET_ENDPOINT = `wss://${API_HOSTNAME}/stream-v2`

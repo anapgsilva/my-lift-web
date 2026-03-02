@@ -35,6 +35,7 @@ describe('useSpeechRecognition', () => {
       onend: null,
       start: vi.fn(),
       stop: vi.fn(),
+      abort: vi.fn(),
     }
 
     const MockSpeechRecognition = vi.fn(() => mockRecognition) as any
@@ -198,6 +199,42 @@ describe('useSpeechRecognition', () => {
     })
 
     expect(showError).toHaveBeenCalledWith('Speech recognition error: network')
+  })
+
+  it('should abort and null handlers on unmount', () => {
+    const { result, unmount } = renderHook(() =>
+      useSpeechRecognition(setStatus, setTranscript, setNumbers, setSpokenText, showError, sendMessage)
+    )
+
+    act(() => {
+      result.current.startListening()
+    })
+
+    unmount()
+
+    expect(mockRecognition.abort).toHaveBeenCalled()
+    expect(mockRecognition.onstart).toBeNull()
+    expect(mockRecognition.onresult).toBeNull()
+    expect(mockRecognition.onerror).toBeNull()
+    expect(mockRecognition.onend).toBeNull()
+  })
+
+  it('should abort previous recognition when startListening is called again', () => {
+    const { result } = renderHook(() =>
+      useSpeechRecognition(setStatus, setTranscript, setNumbers, setSpokenText, showError, sendMessage)
+    )
+
+    act(() => {
+      result.current.startListening()
+    })
+
+    const firstRecognition = mockRecognition
+
+    act(() => {
+      result.current.startListening()
+    })
+
+    expect(firstRecognition.abort).toHaveBeenCalled()
   })
 
   it('should set status to idle on no-speech error', () => {

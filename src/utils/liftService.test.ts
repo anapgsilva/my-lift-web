@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import axios from 'axios'
-import { validateClientIdAndClientSecret, fetchAccessToken, getAccessTokenForSocket } from './liftService'
+import { validateClientIdAndClientSecret, fetchAccessToken, getAccessTokenForSocket, _resetTokenCache } from './liftService'
 import * as constants from '../utils/constants'
 
 vi.mock('axios')
@@ -18,6 +18,7 @@ vi.mock('../utils/constants', async () => {
 describe('koneApiService', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    _resetTokenCache()
   })
 
   describe('validateClientIdAndClientSecret', () => {
@@ -51,15 +52,15 @@ describe('koneApiService', () => {
   })
 
   describe('fetchAccessToken', () => {
-    it('should return access token on successful request', async () => {
+    it('should return access token and expiry on successful request', async () => {
       const mockToken = 'mock_access_token'
       vi.mocked(axios).mockResolvedValue({
-        data: { access_token: mockToken }
+        data: { access_token: mockToken, expires_in: 3600 }
       })
 
-      const token = await fetchAccessToken('client', 'secret', ['scope1'])
+      const result = await fetchAccessToken('client', 'secret', ['scope1'])
 
-      expect(token).toBe(mockToken)
+      expect(result).toEqual({ token: mockToken, expiresIn: 3600 })
       expect(axios).toHaveBeenCalledWith(
         expect.objectContaining({
           method: 'POST',
@@ -95,7 +96,7 @@ describe('koneApiService', () => {
       vi.mocked(constants.getClientId).mockReturnValue('test-client')
       vi.mocked(constants.getClientSecret).mockReturnValue('test-secret')
       vi.mocked(axios).mockResolvedValue({
-        data: { access_token: mockToken }
+        data: { access_token: mockToken, expires_in: 3600 }
       })
 
       const token = await getAccessTokenForSocket()
@@ -114,6 +115,42 @@ describe('koneApiService', () => {
           })
         })
       )
+    })
+
+    it('should return cached token without re-fetching when still valid', async () => {
+      const mockToken = 'socket_access_token'
+      vi.mocked(constants.getClientId).mockReturnValue('test-client')
+      vi.mocked(constants.getClientSecret).mockReturnValue('test-secret')
+      vi.mocked(axios).mockResolvedValue({
+        data: { access_token: mockToken, expires_in: 3600 }
+      })
+
+      await getAccessTokenForSocket()
+      const token = await getAccessTokenForSocket()
+
+      expect(token).toBe(mockToken)
+      expect(axios).toHaveBeenCalledTimes(1)
+    })
+
+    it('should re-fetch token when cached token is expired', async () => {
+      vi.mocked(constants.getClientId).mockReturnValue('test-client')
+      vi.mocked(constants.getClientSecret).mockReturnValue('test-secret')
+      vi.mocked(axios).mockResolvedValue({
+        data: { access_token: 'first_token', expires_in: 1 }
+      })
+
+      await getAccessTokenForSocket()
+
+      // Advance time past expiry + 60s buffer
+      vi.spyOn(Date, 'now').mockReturnValue(Date.now() + 62_000)
+
+      vi.mocked(axios).mockResolvedValue({
+        data: { access_token: 'refreshed_token', expires_in: 3600 }
+      })
+      const token = await getAccessTokenForSocket()
+
+      expect(token).toBe('refreshed_token')
+      expect(axios).toHaveBeenCalledTimes(2)
     })
 
     it('should throw error when credentials are invalid', async () => {

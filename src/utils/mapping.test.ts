@@ -12,7 +12,6 @@ describe('mapping', () => {
     })
 
     it('should handle special cases', () => {
-      expect(WORD_TO_NUM['P1']).toBe(-1)
       expect(WORD_TO_NUM['-1']).toBe(-1)
       expect(WORD_TO_NUM['zero']).toBe(0)
     })

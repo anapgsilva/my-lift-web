@@ -1,18 +1,18 @@
 /** Speak a sentence using the Web Speech Synthesis API */
 export function speak(text: string): Promise<void> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const utterance = new SpeechSynthesisUtterance(text)
     utterance.rate = 1
-    
+
     const savedVoice = localStorage.getItem('selectedVoice')
     if (savedVoice) {
       const voices = window.speechSynthesis.getVoices()
       const voice = voices.find(v => v.name === savedVoice)
       if (voice) utterance.voice = voice
     }
-    
+
     utterance.onend = () => resolve()
-    utterance.onerror = () => resolve()
+    utterance.onerror = (e) => reject(e)
     window.speechSynthesis.speak(utterance)
   })
 }

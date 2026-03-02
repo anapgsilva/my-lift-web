@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 import { openWebSocketConnection } from '../utils/websocket'
 
 describe('websocket', () => {
@@ -11,7 +11,8 @@ describe('websocket', () => {
       onerror: null,
       onclose: null,
       onmessage: null,
-      onopen: null
+      onopen: null,
+      close: vi.fn(),
     }
     global.WebSocket = vi.fn(() => mockWs) as any
   })
@@ -77,11 +78,51 @@ describe('websocket', () => {
       global.WebSocket = vi.fn(() => { throw new Error('Constructor error') }) as any
       const onMessage = vi.fn()
       const onError = vi.fn()
-      
+
       const promise = openWebSocketConnection('test-token', onMessage, onError)
-      
+
       expect(onError).toHaveBeenCalledWith('Failed to connect to the lift server. Please refresh page.')
       await expect(promise).rejects.toThrow('Constructor error')
+    })
+
+    describe('timeout', () => {
+      beforeEach(() => { vi.useFakeTimers() })
+      afterEach(() => { vi.useRealTimers() })
+
+      it('should reject and call onError if connection does not open within 10 s', async () => {
+        const onMessage = vi.fn()
+        const onError = vi.fn()
+
+        const promise = openWebSocketConnection('test-token', onMessage, onError)
+        vi.advanceTimersByTime(10_000)
+
+        await expect(promise).rejects.toThrow('WebSocket connection timed out')
+        expect(onError).toHaveBeenCalledWith('Failed to connect to the lift server. Please refresh page.')
+      })
+
+      it('should not reject after timeout if connection already opened', async () => {
+        const onMessage = vi.fn()
+        const onError = vi.fn()
+
+        const promise = openWebSocketConnection('test-token', onMessage, onError)
+        mockWs.onopen()
+        vi.advanceTimersByTime(10_000)
+
+        await expect(promise).resolves.toBe(mockWs)
+        expect(onError).not.toHaveBeenCalled()
+      })
+
+      it('should call onError only once when onerror fires before timeout', async () => {
+        const onMessage = vi.fn()
+        const onError = vi.fn()
+
+        const promise = openWebSocketConnection('test-token', onMessage, onError)
+        mockWs.onerror(new Event('error'))
+        vi.advanceTimersByTime(10_000)
+
+        await expect(promise).rejects.toThrow()
+        expect(onError).toHaveBeenCalledTimes(1)
+      })
     })
   })
 })

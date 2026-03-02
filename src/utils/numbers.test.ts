@@ -53,7 +53,7 @@ describe('numbers', () => {
     it('should return value within expected range', () => {
       const id = getRequestId()
       expect(id).toBeGreaterThanOrEqual(0)
-      expect(id).toBeLessThan(1000000000)
+      expect(id).toBeLessThanOrEqual(4294967295) // Uint32 max (2^32 - 1)
     })
   })
 })

@@ -29,14 +29,14 @@ describe('speech', () => {
       await expect(promise).resolves.toBeUndefined()
     })
 
-    it('should resolve when utterance errors', async () => {
+    it('should reject when utterance errors', async () => {
       const speakSpy = vi.spyOn(window.speechSynthesis, 'speak')
-      
+
       const promise = speak('test')
       const utterance = speakSpy.mock.calls[0][0]
       utterance.onerror?.(new Event('error') as any)
-      
-      await expect(promise).resolves.toBeUndefined()
+
+      await expect(promise).rejects.toBeInstanceOf(Event)
     })
 
     it('should use saved voice from localStorage', () => {
