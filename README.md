@@ -1,6 +1,6 @@
 # My Lift webapp
 
-User voices from and to which floor they want to travel.
+User says from which and to which floor they want to travel.
 Request is sent to Kone api to move the lift.
 Feedback response is received.
 

@@ -53,6 +53,7 @@ function App() {
   }, [])
 
   const initWebSocket = useCallback(async () => {
+    let messageHandledError = false
     try {
       const accessToken = await getAccessTokenForSocket()
       const ws = await openWebSocketConnection(
@@ -68,18 +69,23 @@ function App() {
             setSpokenText(message)
           } else if (response?.data?.error) {
             message = `Sorry, something went wrong. Lift server responded with ${response.data.error}. Please try again or refresh page.`
+            messageHandledError = true
             showError(message)
           } else {
             if (response?.status) {
-              message = `Sorry, something went wrong. ${response.status} Please try again later.`
+              message = `Sorry, something went wrong. ${response.status}. Please try again later.`
             } else {
               message = `Sorry, something went wrong. Received an unexpected response from the lift server. Please try again or refresh page`
             }
+            messageHandledError = true
             showError(message)
           }
           speak(message).catch(() => {})
         },
-        (error) => showError(error)
+        (error) => {
+          if (!messageHandledError) showError(error)
+          messageHandledError = false
+        }
       )
       wsRef.current = ws
     } catch (error) {
