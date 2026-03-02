@@ -22,7 +22,7 @@ export function openWebSocketConnection(
     const timeout = setTimeout(() => {
       settle(() => {
         ws?.close()
-        onError('Failed to connect to the lift server. Please refresh page.')
+        onError('Failed to connect to the lift server. Please try again.')
         reject(new Error('WebSocket connection timed out'))
       })
     }, WEBSOCKET_CONNECT_TIMEOUT_MS)
@@ -34,13 +34,13 @@ export function openWebSocketConnection(
       // error and close events are absorbed until connection has been established
       ws.onerror = (error) => {
         settle(() => {
-          onError('Failed to connect to the lift server. Please refresh page.')
+          onError('Failed to connect to the lift server. Please try again.')
           reject(new Error(`WebSocket error: ${error}`))
         })
       }
       ws.onclose = (event) => {
         settle(() => {
-          onError('Connection to the lift server closed. Please refresh page.')
+          onError('Connection to the lift server closed. Please try again.')
           console.error(`WebSocket closed: ${event.code} ${event.reason}`)
           reject(event.code)
         })
@@ -61,11 +61,11 @@ export function openWebSocketConnection(
           console.info('Web socket connection opened at ', new Date())
           ws.onclose = (event) => {
             console.error(`WebSocket closed after connect: ${event.code} ${event.reason}`)
-            onError('Connection to the lift server closed. Please refresh page.')
+            onError('Connection to the lift server closed. Please try again or refresh page.')
           }
           ws.onerror = (error) => {
             console.error('WebSocket error after connect:', error)
-            onError('Connection to the lift server lost. Please refresh page.')
+            onError('Connection to the lift server lost. Please try again or refresh page.')
           }
           resolve(ws)
         })
@@ -73,7 +73,7 @@ export function openWebSocketConnection(
     } catch (error) {
       settle(() => {
         console.error('Error while opening WebSocket connection', error)
-        onError('Failed to connect to the lift server. Please refresh page.')
+        onError('Failed to connect to the lift server. Please try again.')
         reject(error)
       })
     }

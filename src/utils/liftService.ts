@@ -115,6 +115,6 @@ export function sendLiftCall(
     }
   } else {
     console.warn("WebSocket not connected.")
-    onError("Failed to call the lift because the connection to the lift server was interrupted. Please refresh page.")
+    onError("Failed to call the lift because the connection to the lift server was interrupted. Please try again or refresh page.")
   }
 }

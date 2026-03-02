@@ -37,7 +37,7 @@ describe('openWebSocketConnection', () => {
     vi.stubGlobal('WebSocket', vi.fn(() => { throw new Error('Constructor error') }))
     const onError = vi.fn()
     const promise = openWebSocketConnection('token', vi.fn(), onError)
-    expect(onError).toHaveBeenCalledWith('Failed to connect to the lift server. Please refresh page.')
+    expect(onError).toHaveBeenCalledWith('Failed to connect to the lift server. Please try again.')
     await expect(promise).rejects.toThrow('Constructor error')
   })
 
@@ -46,7 +46,7 @@ describe('openWebSocketConnection', () => {
     const promise = openWebSocketConnection('token', vi.fn(), onError)
     mockWs.onerror(new Event('error'))
     await expect(promise).rejects.toThrow()
-    expect(onError).toHaveBeenCalledWith('Failed to connect to the lift server. Please refresh page.')
+    expect(onError).toHaveBeenCalledWith('Failed to connect to the lift server. Please try again.')
   })
 
   it('calls onError and rejects when socket closes before open', async () => {
@@ -54,7 +54,7 @@ describe('openWebSocketConnection', () => {
     const promise = openWebSocketConnection('token', vi.fn(), onError)
     mockWs.onclose({ code: 1006, reason: '' })
     await expect(promise).rejects.toBeDefined()
-    expect(onError).toHaveBeenCalledWith('Connection to the lift server closed. Please refresh page.')
+    expect(onError).toHaveBeenCalledWith('Connection to the lift server closed. Please try again.')
   })
 
   it('calls onError when socket closes after open', async () => {
@@ -63,7 +63,7 @@ describe('openWebSocketConnection', () => {
     mockWs.onopen()
     await promise
     mockWs.onclose({ code: 1006, reason: 'Server closed' })
-    expect(onError).toHaveBeenCalledWith('Connection to the lift server closed. Please refresh page.')
+    expect(onError).toHaveBeenCalledWith('Connection to the lift server closed. Please try again or refresh page.')
   })
 
   it('calls onError when socket errors after open', async () => {
@@ -72,7 +72,7 @@ describe('openWebSocketConnection', () => {
     mockWs.onopen()
     await promise
     mockWs.onerror(new Event('error'))
-    expect(onError).toHaveBeenCalledWith('Connection to the lift server lost. Please refresh page.')
+    expect(onError).toHaveBeenCalledWith('Connection to the lift server lost. Please try again or refresh page.')
   })
 
   it('calls onMessage when a valid JSON message is received', async () => {
@@ -102,7 +102,7 @@ describe('openWebSocketConnection', () => {
       const promise = openWebSocketConnection('token', vi.fn(), onError)
       vi.advanceTimersByTime(10_000)
       await expect(promise).rejects.toThrow('WebSocket connection timed out')
-      expect(onError).toHaveBeenCalledWith('Failed to connect to the lift server. Please refresh page.')
+      expect(onError).toHaveBeenCalledWith('Failed to connect to the lift server. Please try again.')
     })
 
     it('does not reject after timeout if connection already opened', async () => {

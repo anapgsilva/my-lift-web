@@ -178,7 +178,7 @@ describe('koneApiService', () => {
       const onError = vi.fn()
       sendLiftCall(null, [0, 25], onError)
       expect(onError).toHaveBeenCalledWith(
-        'Failed to call the lift because the connection to the lift server was interrupted. Please refresh page.'
+        'Failed to call the lift because the connection to the lift server was interrupted. Please try again or refresh page.'
       )
     })
 
@@ -187,7 +187,7 @@ describe('koneApiService', () => {
       mockWs.readyState = WebSocket.CLOSED
       sendLiftCall(mockWs, [0, 25], onError)
       expect(onError).toHaveBeenCalledWith(
-        'Failed to call the lift because the connection to the lift server was interrupted. Please refresh page.'
+        'Failed to call the lift because the connection to the lift server was interrupted. Please try again or refresh page.'
       )
     })
 
