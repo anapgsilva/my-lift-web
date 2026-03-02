@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import '@testing-library/jest-dom'
 import App from '../App'
@@ -124,6 +124,36 @@ describe('App', () => {
       expect(screen.getByRole('button', { name: /stop listening/i })).toBeInTheDocument()
     })
 
+    it('should not initialize WebSocket when user is not logged in', async () => {
+      vi.mocked(auth.isUserLoggedIn).mockReturnValue(false)
+
+      render(<App />)
+
+      // Give async effects time to run
+      await new Promise((r) => setTimeout(r, 50))
+
+      expect(liftService.getAccessTokenForSocket).not.toHaveBeenCalled()
+      expect(websocket.openWebSocketConnection).not.toHaveBeenCalled()
+    })
+
+    it('should initialize WebSocket after user logs in', async () => {
+      vi.mocked(auth.isUserLoggedIn).mockReturnValue(false)
+      const user = userEvent.setup()
+
+      render(<App />)
+
+      expect(websocket.openWebSocketConnection).not.toHaveBeenCalled()
+
+      await user.type(screen.getByPlaceholderText(/id/i), 'test-user')
+      await user.type(screen.getByPlaceholderText(/password/i), 'test-pass')
+      await user.click(screen.getByRole('button', { name: /log in/i }))
+
+      await waitFor(() => {
+        expect(liftService.getAccessTokenForSocket).toHaveBeenCalled()
+        expect(websocket.openWebSocketConnection).toHaveBeenCalled()
+      })
+    })
+
     it('should logout user if access token fails', async () => {
       vi.mocked(auth.isUserLoggedIn).mockReturnValue(true)
       vi.mocked(liftService.getAccessTokenForSocket).mockRejectedValue(new Error('Auth failed'))
@@ -137,13 +167,41 @@ describe('App', () => {
 
     it('should close WebSocket on unmount', async () => {
       vi.mocked(auth.isUserLoggedIn).mockReturnValue(true)
-      
+
       const { unmount } = render(<App />)
       await waitFor(() => expect(websocket.openWebSocketConnection).toHaveBeenCalled())
-      
+
       unmount()
-      
+
       expect(mockWs.close).toHaveBeenCalled()
+    })
+
+    it('should reconnect WebSocket when clicking Start Listening with disconnected WS', async () => {
+      vi.mocked(auth.isUserLoggedIn).mockReturnValue(true)
+      const user = userEvent.setup()
+
+      render(<App />)
+      await waitFor(() => expect(websocket.openWebSocketConnection).toHaveBeenCalledTimes(1))
+
+      mockWs.readyState = WebSocket.CLOSED
+
+      await user.click(screen.getByRole('button', { name: /start listening/i }))
+
+      await waitFor(() => {
+        expect(websocket.openWebSocketConnection).toHaveBeenCalledTimes(2)
+      })
+    })
+
+    it('should not reinitialize WebSocket when clicking Start Listening with open WS', async () => {
+      vi.mocked(auth.isUserLoggedIn).mockReturnValue(true)
+      const user = userEvent.setup()
+
+      render(<App />)
+      await waitFor(() => expect(websocket.openWebSocketConnection).toHaveBeenCalledTimes(1))
+
+      await user.click(screen.getByRole('button', { name: /start listening/i }))
+
+      expect(websocket.openWebSocketConnection).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -222,8 +280,10 @@ describe('App', () => {
       render(<App />)
       await waitFor(() => expect(websocket.openWebSocketConnection).toHaveBeenCalled())
       
-      onMessageCallback({ data: { error: 'Invalid floor' } })
-      
+      await act(async () => {
+        onMessageCallback({ data: { error: 'Invalid floor' } })
+      })
+
       await waitFor(() => {
         expect(screen.getByText(/Lift server responded with Invalid floor/i)).toBeInTheDocument()
       })
@@ -250,8 +310,10 @@ describe('App', () => {
       render(<App />)
       await waitFor(() => expect(websocket.openWebSocketConnection).toHaveBeenCalled())
       
-      capturedOnError('Connection failed')
-      
+      await act(async () => {
+        capturedOnError('Connection failed')
+      })
+
       await waitFor(() => {
         expect(screen.getByText('Connection failed')).toBeInTheDocument()
       })
@@ -340,6 +402,49 @@ describe('App', () => {
       })
     })
 
+    it('should silently ignore statusCode 201 response', async () => {
+      vi.mocked(auth.isUserLoggedIn).mockReturnValue(true)
+
+      render(<App />)
+      await waitFor(() => expect(websocket.openWebSocketConnection).toHaveBeenCalled())
+
+      onMessageCallback({ statusCode: 201 })
+
+      expect(speech.speak).not.toHaveBeenCalled()
+      expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+      expect(screen.queryByText(/Response:/i)).not.toBeInTheDocument()
+    })
+
+    it('should display error including status field from unexpected response', async () => {
+      vi.mocked(auth.isUserLoggedIn).mockReturnValue(true)
+
+      render(<App />)
+      await waitFor(() => expect(websocket.openWebSocketConnection).toHaveBeenCalled())
+
+      await act(async () => {
+        onMessageCallback({ status: '503 Service Unavailable' })
+      })
+
+      await waitFor(() => {
+        expect(screen.getByText(/Sorry, something went wrong\. 503 Service Unavailable/i)).toBeInTheDocument()
+      })
+    })
+
+    it('should display generic error for completely unexpected response', async () => {
+      vi.mocked(auth.isUserLoggedIn).mockReturnValue(true)
+
+      render(<App />)
+      await waitFor(() => expect(websocket.openWebSocketConnection).toHaveBeenCalled())
+
+      await act(async () => {
+        onMessageCallback({})
+      })
+
+      await waitFor(() => {
+        expect(screen.getByText(/Received an unexpected response from the lift server/i)).toBeInTheDocument()
+      })
+    })
+
     it('should display error when sendLiftCall fails', async () => {
       vi.mocked(auth.isUserLoggedIn).mockReturnValue(true)
       const { useSpeechRecognition } = await import('../hooks/useSpeechRecognition')
@@ -359,8 +464,10 @@ describe('App', () => {
       render(<App />)
       await waitFor(() => expect(websocket.openWebSocketConnection).toHaveBeenCalled())
       
-      capturedSendMessage([0, 25])
-      
+      await act(async () => {
+        capturedSendMessage([0, 25])
+      })
+
       await waitFor(() => {
         expect(screen.getByText("Failed to call the lift because the connection to the lift server was interrupted. Please refresh page.")).toBeInTheDocument()
       })

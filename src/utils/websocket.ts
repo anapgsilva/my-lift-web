@@ -59,6 +59,14 @@ export function openWebSocketConnection(
       ws.onopen = () => {
         settle(() => {
           console.info('Web socket connection opened at ', new Date())
+          ws.onclose = (event) => {
+            console.error(`WebSocket closed after connect: ${event.code} ${event.reason}`)
+            onError('Connection to the lift server closed. Please refresh page.')
+          }
+          ws.onerror = (error) => {
+            console.error('WebSocket error after connect:', error)
+            onError('Connection to the lift server lost. Please refresh page.')
+          }
           resolve(ws)
         })
       }

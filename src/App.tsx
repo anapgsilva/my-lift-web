@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Status } from './types/speechRecognition'
 import { getAccessTokenForSocket } from './utils/liftService'
 import Header from './components/Header/Header'
@@ -19,14 +19,13 @@ function App() {
   const [user, setUser] = useState({ isLoggedIn: false })
   const hasAutoStarted = useRef(false)
   const wsRef = useRef<WebSocket | null>(null)
-  const wsInitialized = useRef(false) // to avoid websocket connection twice
 
-  const showError = (error: string) => {
+  const showError = useCallback((error: string) => {
     if (error) {
       setStatus('error')
     }
     setErrorMsg(error)
-  }
+  }, [])
 
   const sendMessage = (floors: number[]) => {
     sendLiftCall(wsRef.current, floors, (msg) => {
@@ -53,39 +52,50 @@ function App() {
     }
   }, [])
 
-  useEffect(() => {
-    // Open websocket on mount if user logged in
-    if (wsInitialized.current) return
-    wsInitialized.current = true
-
-    const initWebSocket = async () => {
-      try {
-        // Open the WebSocket connection
-        const accessToken = await getAccessTokenForSocket()
-        const ws = await openWebSocketConnection(
-          accessToken,
-          (response) => {
-            let message = ""
-            if (response.data.success == true) {
-              message = 'Calling your lift now.'
-              setSpokenText(message)
-            } else if (response.data.error) {
-              message = `Sorry, something went wrong. Lift server responded with ${response.data.error}. Please try again or refresh page.`
-              showError(message)
+  const initWebSocket = useCallback(async () => {
+    try {
+      const accessToken = await getAccessTokenForSocket()
+      const ws = await openWebSocketConnection(
+        accessToken,
+        (response) => {
+          if (response?.statusCode === 201) {
+            // First response: call received by server, wait for the result response
+            return
+          }
+          let message = ""
+          if (response?.data?.success == true) {
+            message = 'Calling your lift now.'
+            setSpokenText(message)
+          } else if (response?.data?.error) {
+            message = `Sorry, something went wrong. Lift server responded with ${response.data.error}. Please try again or refresh page.`
+            showError(message)
+          } else {
+            if (response?.status) {
+              message = `Sorry, something went wrong. ${response.status} Please try again later.`
+            } else {
+              message = `Sorry, something went wrong. Received an unexpected response from the lift server. Please try again or refresh page`
             }
-            speak(message).catch(() => {})
-          },
-          (error) => showError(error)
-        )
-        wsRef.current = ws
-      } catch (error) {
-        console.error('Failed to get access token:', error)
-        // Logout user if credentials are invalid
-        logout()
-        setUser({ isLoggedIn: false })
-      }
+            showError(message)
+          }
+          speak(message).catch(() => {})
+        },
+        (error) => showError(error)
+      )
+      wsRef.current = ws
+    } catch (error) {
+      console.error('Failed to get access token:', error)
+      // Logout user if credentials are invalid
+      logout()
+      setUser({ isLoggedIn: false })
     }
-    initWebSocket();
+  }, [showError])
+
+  useEffect(() => {
+    // Open websocket only when logged in, and skip if already open
+    if (!user.isLoggedIn) return
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) return
+
+    initWebSocket()
 
     // Clean up the WebSocket connection when the component unmounts
     return () => {
@@ -93,7 +103,7 @@ function App() {
         wsRef.current.close();
       }
     };
-  }, [])
+  }, [user.isLoggedIn, initWebSocket])
 
 
 
@@ -106,6 +116,13 @@ function App() {
   }, [startListening, user.isLoggedIn])
 
 
+
+  const handleStartListening = async () => {
+    if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+      await initWebSocket()
+    }
+    startListening()
+  }
 
   const handleLogin = (id: string, password: string) => {
     login(id, password)
@@ -139,7 +156,7 @@ function App() {
           <button
             id="listening-btn"
             className="start-btn"
-            onClick={status === 'listening' ? stopListening : startListening}
+            onClick={status === 'listening' ? stopListening : handleStartListening}
             aria-label={status === 'listening' ? 'Stop listening' : 'Start listening for speech'}
           >
             {status === 'listening' ? '🛑 Stop Listening' : '🎤 Start Listening'}

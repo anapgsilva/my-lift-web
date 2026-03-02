@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import axios from 'axios'
-import { validateClientIdAndClientSecret, fetchAccessToken, getAccessTokenForSocket, _resetTokenCache } from './liftService'
+import { validateClientIdAndClientSecret, fetchAccessToken, getAccessTokenForSocket, _resetTokenCache, sendLiftCall } from './liftService'
 import * as constants from '../utils/constants'
 
 vi.mock('axios')
@@ -11,9 +11,13 @@ vi.mock('../utils/constants', async () => {
     getClientId: vi.fn(),
     getClientSecret: vi.fn(),
     BUILDING_ID: 'test-building',
-    GROUP_ID: 'test-group'
+    GROUP_ID: 'test-group',
+    TARGET_BUILDING_ID: 'building:test-building',
   }
 })
+vi.mock('../utils/numbers', () => ({
+  getRequestId: vi.fn(() => 99999)
+}))
 
 describe('koneApiService', () => {
   beforeEach(() => {
@@ -160,6 +164,66 @@ describe('koneApiService', () => {
       await expect(getAccessTokenForSocket()).rejects.toThrow(
         'CLIENT_ID and CLIENT_SECRET need to be defined'
       )
+    })
+  })
+
+  describe('sendLiftCall', () => {
+    let mockWs: any
+
+    beforeEach(() => {
+      mockWs = { readyState: WebSocket.OPEN, send: vi.fn() }
+    })
+
+    it('should call onError when ws is null', () => {
+      const onError = vi.fn()
+      sendLiftCall(null, [0, 25], onError)
+      expect(onError).toHaveBeenCalledWith(
+        'Failed to call the lift because the connection to the lift server was interrupted. Please refresh page.'
+      )
+    })
+
+    it('should call onError when ws is not open', () => {
+      const onError = vi.fn()
+      mockWs.readyState = WebSocket.CLOSED
+      sendLiftCall(mockWs, [0, 25], onError)
+      expect(onError).toHaveBeenCalledWith(
+        'Failed to call the lift because the connection to the lift server was interrupted. Please refresh page.'
+      )
+    })
+
+    it('should send correctly structured payload when ws is open', () => {
+      sendLiftCall(mockWs, [0, 25], vi.fn())
+
+      expect(mockWs.send).toHaveBeenCalledTimes(1)
+      const payload = JSON.parse(mockWs.send.mock.calls[0][0])
+      expect(payload).toMatchObject({
+        type: 'lift-call-api-v2',
+        buildingId: 'building:test-building',
+        callType: 'action',
+        groupId: 'test-group',
+        payload: {
+          request_id: 99999,
+          area: 2000,       // koneApiMapping['0']
+          terminal: 1,
+          call: {
+            action: 2,
+            destination: 27000, // koneApiMapping['25']
+          },
+        },
+      })
+    })
+
+    it('should include an ISO timestamp in the payload', () => {
+      sendLiftCall(mockWs, [0, 25], vi.fn())
+
+      const payload = JSON.parse(mockWs.send.mock.calls[0][0])
+      expect(() => new Date(payload.payload.time)).not.toThrow()
+      expect(new Date(payload.payload.time).toISOString()).toBe(payload.payload.time)
+    })
+
+    it('should throw when ws.send throws', () => {
+      mockWs.send = vi.fn(() => { throw new Error('send failed') })
+      expect(() => sendLiftCall(mockWs, [0, 25], vi.fn())).toThrow('send failed')
     })
   })
 })
